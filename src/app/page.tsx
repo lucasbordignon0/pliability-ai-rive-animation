@@ -1,65 +1,228 @@
-import Image from "next/image";
+"use client";
+
+import {
+  useRive,
+  useStateMachineInput,
+  Layout,
+  Fit,
+  Alignment,
+} from "@rive-app/react-webgl2";
+import { useCallback, useRef, useEffect, useState } from "react";
 
 export default function Home() {
+  const riveRef = useRef<HTMLDivElement>(null);
+  const [showText, setShowText] = useState(false);
+  const [textContent, setTextContent] = useState(
+    "Let's work on building a session together."
+  );
+  const [isTextChanging, setIsTextChanging] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const { rive, RiveComponent } = useRive({
+    src: "/plia-rive-v2.riv",
+    stateMachines: "State Machine 1",
+    autoplay: true,
+    layout: new Layout({
+      fit: Fit.Contain,
+      alignment: Alignment.TopCenter,
+    }),
+  });
+
+  const toThinkingInput = useStateMachineInput(
+    rive,
+    "State Machine 1",
+    "toThinking"
+  );
+  const doneInput = useStateMachineInput(rive, "State Machine 1", "done");
+  const resetInput = useStateMachineInput(rive, "State Machine 1", "reset");
+
+  const triggerThinking = useCallback(() => {
+    if (toThinkingInput) {
+      toThinkingInput.fire();
+      // Fade out
+      setIsTextChanging(true);
+      setTimeout(() => {
+        setIsTextChanging(false);
+        setTextContent('"Warmup for a hard 10 mile run"');
+      }, 300);
+    }
+  }, [toThinkingInput]);
+
+  const triggerComplete = useCallback(() => {
+    if (doneInput) {
+      doneInput.fire();
+    }
+  }, [doneInput]);
+
+  const resetStateMachine = useCallback(() => {
+    if (resetInput) {
+      resetInput.fire();
+      setShowText(false);
+      setIsTextChanging(false);
+      setTextContent("Let's work on building a session together.");
+      // Show text again after reset (when idle starts)
+      setTimeout(() => {
+        setShowText(true);
+      }, 2000);
+    }
+  }, [resetInput]);
+
+  // Show text after idle state starts (intro runs first, then idle)
+  useEffect(() => {
+    if (rive) {
+      const timer = setTimeout(() => {
+        setShowText(true);
+        setIsInitialLoad(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [rive]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="flex min-h-screen flex-col items-center bg-black pt-8">
+      {/* Phone mockup container */}
+      <div
+        className="relative"
+        style={{
+          width: "402px",
+          height: "874px",
+          borderRadius: "48px",
+          border: "8px solid #2B2B2B",
+          backgroundColor: "#000000",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Inner content area */}
+        <div
+          className="relative h-full w-full overflow-hidden"
+          style={{
+            borderRadius: "40px",
+            backgroundColor: "#000000",
+          }}
+        >
+          {/* Rive animation container */}
+          <div
+            ref={riveRef}
+            className="absolute top-0 left-0 right-0 overflow-visible"
+            style={{
+              height: "100%",
+              mixBlendMode: "lighten",
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <RiveComponent
+              style={{
+                width: "100%",
+                height: "100%",
+                overflow: "visible",
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {/* Text overlay */}
+            {showText && (
+              <div
+                className="absolute pointer-events-none left-1/2 -translate-x-1/2"
+                style={{
+                  top: "208px",
+                }}
+              >
+                <div
+                  className={`${isInitialLoad ? "text-animate-in" : ""} ${
+                    isTextChanging
+                      ? "text-fade-out"
+                      : isInitialLoad
+                      ? ""
+                      : "text-fade-in"
+                  }`}
+                  style={{ position: "relative" }}
+                  key={textContent}
+                >
+                  <p
+                    className="text-center"
+                    style={{
+                      fontFamily: "var(--font-poppins), Poppins, sans-serif",
+                      fontSize: "14px",
+                      letterSpacing: "-0.02em",
+                      width: "144px",
+                      color: "rgba(255, 255, 255, 0.4)",
+                    }}
+                  >
+                    {textContent}
+                  </p>
+                  <p
+                    className="text-center text-shine"
+                    style={{
+                      fontFamily: "var(--font-poppins), Poppins, sans-serif",
+                      fontSize: "14px",
+                      letterSpacing: "-0.02em",
+                      width: "144px",
+                    }}
+                  >
+                    {textContent}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input at the bottom */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              padding: "16px",
+            }}
           >
-            Documentation
-          </a>
+            <input
+              type="text"
+              placeholder="What do you need today?"
+              className="phone-input w-full"
+              style={{
+                height: "58px",
+                borderRadius: "24px",
+                backgroundColor: "#1C1C1E",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                padding: "0 16px",
+                fontSize: "16px",
+                fontFamily: "var(--font-poppins), Poppins, sans-serif",
+                color: "#FFFFFF",
+                outline: "none",
+              }}
+            />
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Control buttons */}
+      <div className="mt-8 flex gap-4">
+        <button
+          onClick={triggerThinking}
+          className="rounded-lg bg-white/10 px-6 py-2 text-white transition-colors hover:bg-white/20"
+          style={{
+            fontFamily: "var(--font-poppins), Poppins, sans-serif",
+            fontSize: "14px",
+          }}
+        >
+          Thinking
+        </button>
+        <button
+          onClick={triggerComplete}
+          className="rounded-lg bg-white/10 px-6 py-2 text-white transition-colors hover:bg-white/20"
+          style={{
+            fontFamily: "var(--font-poppins), Poppins, sans-serif",
+            fontSize: "14px",
+          }}
+        >
+          Complete
+        </button>
+        <button
+          onClick={resetStateMachine}
+          className="rounded-lg bg-white/10 px-6 py-2 text-white transition-colors hover:bg-white/20"
+          style={{
+            fontFamily: "var(--font-poppins), Poppins, sans-serif",
+            fontSize: "14px",
+          }}
+        >
+          Reset
+        </button>
+      </div>
     </div>
   );
 }
