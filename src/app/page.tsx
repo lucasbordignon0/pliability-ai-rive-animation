@@ -31,20 +31,24 @@ export default function Home() {
       let stateName = "";
       if (typeof event === "string") {
         stateName = event;
-      } else if (event?.data) {
-        // Check if data is an array
-        if (Array.isArray(event.data)) {
-          const firstItem = event.data[0];
-          if (firstItem && typeof firstItem === "object" && "name" in firstItem) {
-            stateName = String(firstItem.name);
+      } else if (event && typeof event === "object") {
+        // Check if data exists and handle different structures
+        const eventData = event.data;
+        if (eventData) {
+          // Check if data is an array
+          if (Array.isArray(eventData)) {
+            const firstItem = eventData[0] as any;
+            if (firstItem && typeof firstItem === "object" && firstItem.name) {
+              stateName = String(firstItem.name);
+            }
+          } else if (typeof eventData === "object" && eventData !== null && "name" in eventData) {
+            stateName = String((eventData as any).name);
           }
-        } else if (typeof event.data === "object" && event.data !== null && "name" in event.data) {
-          stateName = String(event.data.name);
+        } else if (event.name) {
+          stateName = String(event.name);
+        } else if (event.stateName) {
+          stateName = String(event.stateName);
         }
-      } else if (event?.name) {
-        stateName = String(event.name);
-      } else if (event?.stateName) {
-        stateName = String(event.stateName);
       }
       
       console.log("State change - raw event:", event, "stateName:", stateName);
