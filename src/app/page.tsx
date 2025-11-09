@@ -33,15 +33,18 @@ export default function Home() {
         stateName = event;
       } else if (event?.data) {
         // Check if data is an array
-        if (Array.isArray(event.data) && event.data[0]?.name) {
-          stateName = event.data[0].name;
-        } else if (typeof event.data === "object" && event.data?.name) {
-          stateName = event.data.name;
+        if (Array.isArray(event.data)) {
+          const firstItem = event.data[0];
+          if (firstItem && typeof firstItem === "object" && "name" in firstItem) {
+            stateName = String(firstItem.name);
+          }
+        } else if (typeof event.data === "object" && event.data !== null && "name" in event.data) {
+          stateName = String(event.data.name);
         }
       } else if (event?.name) {
-        stateName = event.name;
+        stateName = String(event.name);
       } else if (event?.stateName) {
-        stateName = event.stateName;
+        stateName = String(event.stateName);
       }
       
       console.log("State change - raw event:", event, "stateName:", stateName);
