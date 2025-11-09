@@ -26,15 +26,18 @@ export default function Home() {
       fit: Fit.Contain,
       alignment: Alignment.TopCenter,
     }),
-    onStateChange: (event) => {
+    onStateChange: (event: any) => {
       // Try multiple event structures to find the state name
       let stateName = "";
       if (typeof event === "string") {
         stateName = event;
-      } else if (event?.data?.[0]?.name) {
-        stateName = event.data[0].name;
-      } else if (event?.data?.name) {
-        stateName = event.data.name;
+      } else if (event?.data) {
+        // Check if data is an array
+        if (Array.isArray(event.data) && event.data[0]?.name) {
+          stateName = event.data[0].name;
+        } else if (typeof event.data === "object" && event.data?.name) {
+          stateName = event.data.name;
+        }
       } else if (event?.name) {
         stateName = event.name;
       } else if (event?.stateName) {
